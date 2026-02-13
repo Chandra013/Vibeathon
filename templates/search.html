@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+{% block title %}Advanced Search{% endblock %}
+{% block content %}
+<h2 class="mb-4"><i class="bi bi-search"></i> Advanced Search</h2>
+<div class="card card-custom p-4 mb-4">
+    <form id="searchForm" class="row g-3">
+        <div class="col-md-4">
+            <label class="form-label">Event Name</label>
+            <input type="text" class="form-control" name="name">
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">Venue ID</label>
+            <input type="text" class="form-control" name="venue_id">
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">Status</label>
+            <select class="form-select" name="status">
+                <option value="">Any</option>
+                <option value="approved">Approved</option>
+                <option value="pending_hod">Pending HOD</option>
+                <option value="pending_dean">Pending Dean</option>
+                <option value="pending_head">Pending Head</option>
+                <option value="rejected">Rejected</option>
+                <option value="running">Running</option>
+                <option value="completed">Completed</option>
+            </select>
+        </div>
+        <div class="col-12">
+            <button type="submit" class="btn btn-gradient"><i class="bi bi-search"></i> Search</button>
+        </div>
+    </form>
+</div>
+<div id="searchResults"></div>
+<script>
+document.getElementById('searchForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const form = e.target;
+    const params = new URLSearchParams(new FormData(form)).toString();
+    const res = await fetch('/api/events/search?' + params);
+    const data = await res.json();
+    const results = data.events || [];
+    let html = '';
+    if (results.length === 0) {
+        html = '<div class="alert alert-warning">No events found.</div>';
+    } else {
+        html = `<table class='table table-dark table-striped mt-3'><thead><tr><th>Name</th><th>Venue</th><th>Status</th><th>Start</th><th>End</th></tr></thead><tbody>`;
+        for (const e of results) {
+            html += `<tr><td>${e.name}</td><td>${e.venue_id||''}</td><td>${e.status}</td><td>${e.start_time}</td><td>${e.end_time}</td></tr>`;
+        }
+        html += '</tbody></table>';
+    }
+    document.getElementById('searchResults').innerHTML = html;
+});
+</script>
+{% endblock %}

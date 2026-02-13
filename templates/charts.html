@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+{% block title %}Occupancy & Resource Charts{% endblock %}
+{% block content %}
+<h2 class="mb-4"><i class="bi bi-bar-chart"></i> Occupancy & Resource Usage</h2>
+<div class="row g-4">
+    <div class="col-md-6">
+        <div class="card card-custom p-4">
+            <h5 class="mb-3"><i class="bi bi-people-fill"></i> Venue Occupancy</h5>
+            <canvas id="venueChart" height="250"></canvas>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card card-custom p-4">
+            <h5 class="mb-3"><i class="bi bi-box-seam"></i> Resource Usage</h5>
+            <canvas id="resourceChart" height="250"></canvas>
+        </div>
+    </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+async function fetchOccupancy() {
+    const res = await fetch('/api/occupancy/');
+    return (await res.json()).occupancy || [];
+}
+async function fetchResources() {
+    const res = await fetch('/api/resources/');
+    return (await res.json()).resources || [];
+}
+function groupBy(arr, key) {
+    return arr.reduce((acc, x) => {
+        acc[x[key]] = (acc[x[key]] || 0) + 1;
+        return acc;
+    }, {});
+}
+async function renderCharts() {
+    // Venue Occupancy
+    const events = await fetchOccupancy();
+    const venueCounts = groupBy(events, 'venue_id');
+    new Chart(document.getElementById('venueChart'), {
+        type: 'bar',
+        data: {
+            labels: Object.keys(venueCounts),
+            datasets: [{
+                label: 'Events per Venue',
+                data: Object.values(venueCounts),
+                backgroundColor: '#6366f1',
+            }]
+        },
+        options: {plugins:{legend:{display:false}},scales:{y:{beginAtZero:true}}}
+    });
+    // Resource Usage
+    const resources = await fetchResources();
+    new Chart(document.getElementById('resourceChart'), {
+        type: 'doughnut',
+        data: {
+            labels: resources.map(r => r.name),
+            datasets: [{
+                label: 'Available',
+                data: resources.map(r => r.quantity),
+                backgroundColor: ['#0ea5e9','#facc15','#22c55e','#ef4444','#6366f1'],
+            }]
+        },
+        options: {plugins:{legend:{position:'bottom'}}}
+    });
+}
+renderCharts();
+</script>
+{% endblock %}

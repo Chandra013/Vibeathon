@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% block title %}Event Calendar{% endblock %}
+{% block content %}
+<h2 class="mb-4"><i class="bi bi-calendar3"></i> Event & Venue Calendar</h2>
+<div id="calendar-container" class="card card-custom p-4">
+    <div id="calendar"></div>
+</div>
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var calendarEl = document.getElementById('calendar');
+    var calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth',
+        height: 600,
+        headerToolbar: {
+            left: 'prev,next today',
+            center: 'title',
+            right: 'dayGridMonth,timeGridWeek,timeGridDay'
+        },
+        events: async function(fetchInfo, successCallback, failureCallback) {
+            try {
+                const res = await fetch('/api/events/my'); // Change to /api/events/all for admin
+                const data = await res.json();
+                const events = (data.events || []).map(e => ({
+                    title: e.name + (e.venue_id ? ' @' + e.venue_id : ''),
+                    start: e.start_time,
+                    end: e.end_time,
+                    color: e.status === 'approved' ? '#22c55e' : (e.status === 'rejected' ? '#ef4444' : '#facc15')
+                }));
+                successCallback(events);
+            } catch (err) {
+                showNotification('Failed to load events', 'danger');
+                failureCallback(err);
+            }
+        },
+        eventClick: function(info) {
+            showNotification(info.event.title, 'info');
+        }
+    });
+    calendar.render();
+});
+</script>
+{% endblock %}
